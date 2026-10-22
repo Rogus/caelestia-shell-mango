@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 import subprocess
 import tempfile
+import time
 import tomllib
 import unittest
 from unittest.mock import patch
@@ -79,6 +80,27 @@ class ThemeTest(unittest.TestCase):
 
 
 class RecorderTest(unittest.TestCase):
+    def test_system_audio_alias_matches_installed_recorder_version(self):
+        for listing, expected in [('default_output|Default output\n', 'default_output'),
+                                  ('defaultoutput|Default output\n', 'defaultoutput')]:
+            with self.subTest(expected=expected), patch.object(recorder.subprocess, 'run') as query:
+                query.return_value.stdout = listing
+                self.assertEqual(recorder.system_audio_device(), expected)
+                self.assertEqual(query.call_args.args[0], ['gpu-screen-recorder', '--list-audio-devices'])
+
+    def test_region_and_sound_flags_reach_recorder(self):
+        with tempfile.TemporaryDirectory() as folder, patch.object(recorder.subprocess, 'Popen') as spawn, \
+                patch.object(recorder, 'system_audio_device', return_value='default_output'), \
+                patch.object(recorder, 'process_identity', return_value='same'), \
+                patch.object(recorder.time, 'sleep'):
+            spawn.return_value.poll.return_value = None
+            spawn.return_value.pid = 12
+            recorder.operate('start', {}, 'eDP-1', folder + '/recording.mp4', True, '640x480+10+20')
+            command = spawn.call_args.args[0]
+            self.assertEqual(command[command.index('-w') + 1], 'region')
+            self.assertEqual(command[command.index('-region') + 1], '640x480+10+20')
+            self.assertEqual(command[command.index('-a') + 1], 'default_output')
+
     def test_pid_reuse_and_missing_process_clear_state(self):
         with patch.object(recorder, 'process_identity', return_value='replacement'):
             self.assertFalse(recorder.status({'pid': 1, 'identity':'old'})['running'])

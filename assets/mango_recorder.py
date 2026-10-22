@@ -36,6 +36,14 @@ def save(path, state):
     temporary.replace(path)
 
 
+def system_audio_device():
+    result = subprocess.run(["gpu-screen-recorder", "--list-audio-devices"],
+                            capture_output=True, text=True, timeout=5, check=True)
+    devices = {line.split("|", 1)[0] for line in result.stdout.splitlines()}
+    # New releases renamed the default-output alias. Keep older versions working.
+    return "default_output" if "default_output" in devices else "defaultoutput"
+
+
 def operate(action, state, output="", destination="", sound=False, region=""):
     current = status(state)
     if action == "start" and not current["running"]:
@@ -44,7 +52,7 @@ def operate(action, state, output="", destination="", sound=False, region=""):
         if region:
             command += ["-region", region]
         if sound:
-            command += ["-a", "defaultoutput"]
+            command += ["-a", system_audio_device()]
         process = subprocess.Popen(command, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
         time.sleep(0.3)
         if process.poll() is not None:
@@ -95,6 +103,6 @@ def main():
 if __name__ == "__main__":
     try:
         main()
-    except (OSError, ValueError, RuntimeError) as error:
+    except (OSError, ValueError, RuntimeError, subprocess.SubprocessError) as error:
         print(str(error), file=sys.stderr)
         sys.exit(1)

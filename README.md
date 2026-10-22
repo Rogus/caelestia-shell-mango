@@ -162,12 +162,16 @@ cmake --build build --parallel 2
 PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests -p 'test_*.py'
 node tests/test_mango_model.js
 python3 tests/check_mango_service.py
+python3 tests/check_window_rules.py
+python3 tests/check_recorder_service.py
 ```
 
 The QML service check runs offscreen with mocked compositor commands and isolated
 configuration/state directories. It checks multi-monitor visibility, special-tag
 command ordering, and game-mode restoration after both reload paths without
-changing the desktop. Hardware-specific behavior still requires live testing.
+changing the desktop. The recorder check covers region/audio flags, pause/resume,
+cancellation, rapid start/stop requests and missing-program recovery using fake
+capture programs. Hardware-specific behavior still requires live testing.
 
 ### Compatibility and known limits
 
@@ -177,7 +181,6 @@ The core shell is ported, but it is not identical to upstream in every behavior:
 - Workspace groups are bounded by Mango's maximum of 31 tags. Group locking, extra Super+Z/X mouse aliases, and lock-surface restoration shortcuts remain unmapped; see [the full profile](#full-caelestia-style-keybindings).
 - Window details retain first-observed titles/app IDs, not necessarily the original creation-time metadata for windows open before the shell starts. Bar filtering tags are assigned locally through `tagRules` rather than compositor window tags.
 - Native window previews need `foreign_toplevel_id` plus supported Wayland image-capture protocols. The fallback needs `grim -T` and still requires a client identifier; titles and metadata remain available when capture is unsupported.
-- **Known recorder-menu bug:** “Record region with sound” currently passes a combined `-sr` flag that the recorder does not recognize, so it starts fullscreen recording without sound. Region-only and fullscreen-with-sound options use separate supported flags.
 - Alpha-threshold blur rules depend on the installed Mango version; older builds use their native transparency mask. The remaining Qt text-input warning is documented below.
 - Notifications require Caelestia to own `org.freedesktop.Notifications`; another running notification server can prevent registration.
 
@@ -1418,7 +1421,17 @@ Also rebuild and install the C++ plugins, then restart Quickshell; copying QML a
 
 ### How does screen recording work?
 
-Screen recording uses `gpu-screen-recorder` and `slurp` for region selection. The combined region-with-sound menu option has a [known bug](#compatibility-and-known-limits). Ensure `gpu-screen-recorder` and `slurp` are installed. Recordings are saved to `~/Videos/Recordings` (configurable via `CAELESTIA_RECORDINGS_DIR`) and can be managed or played back directly from the Utilities drawer.
+Screen recording uses `gpu-screen-recorder` and `slurp` for region selection. The Utilities drawer supports fullscreen or region recording, each with optional system audio. Escape cancels region selection; starting and selecting states prevent duplicate recordings. Pause/resume and stop controls appear while recording. Ensure `gpu-screen-recorder` and `slurp` are installed. Recordings are saved to `~/Videos/Recordings` (configurable via `CAELESTIA_RECORDINGS_DIR`) and can be managed or played back directly from the Utilities drawer.
+
+The helper detects the system-audio device alias supported by the installed
+`gpu-screen-recorder`, including both `default_output` and the older
+`defaultoutput` spelling.
+
+IPC also supports region recording with sound:
+
+```sh
+qs ipc -c caelestia call recorder toggle region-sound
+```
 
 ### My screen is flickering!
 

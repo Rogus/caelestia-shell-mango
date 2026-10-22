@@ -72,7 +72,7 @@ StyledRect {
 
                 StyledText {
                     Layout.fillWidth: true
-                    text: Recorder.paused ? Tr.trCtx("Paused", "recorder state") : Recorder.running ? Tr.trCtx("Running...", "recorder state") : Tr.trCtx("Ready", "recorder state")
+                    text: Recorder.selecting ? Tr.tr("Select a region…") : Recorder.starting ? Tr.tr("Starting…") : Recorder.paused ? Tr.trCtx("Paused", "recorder state") : Recorder.running ? Tr.trCtx("Running...", "recorder state") : Tr.trCtx("Ready", "recorder state")
                     color: Colours.palette.m3onSurfaceVariant
                     font: Tokens.font.body.small
                     elide: Text.ElideRight
@@ -81,7 +81,7 @@ StyledRect {
             }
 
             SplitButton {
-                disabled: Recorder.running
+                disabled: Recorder.running || Recorder.starting || Recorder.selecting
 
                 active: menuItems.find(m => root.props.recordingMode === m.icon + m.text) ?? menuItems[0]
                 menu.onItemSelected: item => root.props.recordingMode = item.icon + item.text
@@ -109,7 +109,7 @@ StyledRect {
                         icon: "volume_up"
                         text: Tr.tr("Record region with sound")
                         activeText: Tr.trCtx("Region", "recording mode")
-                        onClicked: Recorder.start(["-sr"])
+                        onClicked: Recorder.start(["-r", "-s"])
                     }
                 ]
             }
