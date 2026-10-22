@@ -88,6 +88,7 @@ The shell provides the following features on MangoWC. See [compatibility and kno
 - ✅ Wallpaper management
 - ✅ Built-in colour schemes, Matugen wallpaper palettes, and application themes
 - ✅ Searchable keyboard shortcut sheet and Nexus settings
+- ✅ Runtime window rule manager on Super+Ctrl+R, with persistent rules and immediate Mango reloads
 - ✅ Game mode, keyboard indicators, and keyboard-change toasts
 
 ### Keyboard shortcut sheet
@@ -105,6 +106,37 @@ For a manually managed config, add:
 bind=SUPER,slash,spawn,qs ipc -c caelestia call keybindings toggle
 window_rule=title:^Caelestia Keybindings$,is_floating:1
 ```
+
+### Window rule manager
+
+Press **Super + Ctrl + R** to configure the focused window. The manager captures
+it before opening, and also lets you choose another open window. Match its app ID,
+title, or both; configure floating, fullscreen, pinning, always-on-top, decorations,
+opacity, size, position, monitor and workspace tags. Options have Default/On/Off
+states so an omitted option keeps the compositor default. Saved rules can be
+edited or deleted in the same window. Choose your options and click **Save and
+reload Mango** to persist the rule and reload the compositor immediately.
+
+Both bundled profiles include:
+
+```ini
+bind=SUPER+CTRL,r,spawn,qs ipc -c caelestia call windowRules toggle
+window_rule=title:^Caelestia Window Rules$,is_floating:1
+```
+
+Saving or deleting writes `~/.config/mango/caelestia-window-rules.conf` and
+immediately dispatches `reload_config`. The first save adds its source to the
+Mango config and keeps a backup. Rules survive shell updates and restarts.
+Floating, fullscreen, pinning, always-on-top and floating pixel sizes also apply
+to the selected window through IPC. Other properties apply on the next matching
+window open; Mango does not reapply all window rules during a reload. Deleting
+a rule removes the persistent default without undoing an existing window's state.
+
+For a symlink-managed or TOML config, include the rule fragment declaratively
+first (`source=/absolute/path/to/caelestia-window-rules.conf`, or add it to
+`[global].source` for TOML). Set `CAELESTIA_MANGO_CONFIG` in the shell environment
+when using a custom Mango config path. The editor manages its own fragment;
+existing manually written rules remain in their original files.
 
 ### Compositor reload synchronization
 

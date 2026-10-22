@@ -6,6 +6,7 @@ import qs.components.misc
 import qs.services
 import qs.modules.nexus
 import qs.modules.keybindings as KeybindingSheet
+import qs.modules.windowrules as WindowRules
 
 Scope {
     id: root
@@ -134,6 +135,13 @@ Scope {
         }
 
         target: "drawers"
+    }
+
+    IpcHandler {
+        target: "windowRules"
+        function toggle(): void { WindowRules.WindowFactory.toggle(); }
+        function close(): void { WindowRules.WindowFactory.close(); }
+        function isOpen(): bool { return WindowRules.WindowFactory.opened; }
     }
 
     IpcHandler {
